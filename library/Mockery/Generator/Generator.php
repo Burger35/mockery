@@ -7,12 +7,8 @@ class Generator
     public function generate(MockConfiguration $config)
     {
         $factory = new \PHPParser_BuilderFactory;
-
-
-        $parts = explode('\\', $config->getName());
-        $class = array_pop($parts);
         
-        $mock = $factory->class($class);
+        $mock = $factory->class($config->getShortName());
 
         $addClassDefinition = new Pass\AddClassDefinition;
         $addClassDefinition->execute($config, $mock);
@@ -32,9 +28,8 @@ class Generator
 
         $mock = $mock->getNode();
 
-        if (count($parts)) {
-            $name = implode("\\", $parts);
-            $mock = new \PHPParser_Node_Stmt_Namespace(new \PHPParser_Node_Name($name), array($mock));
+        if ($config->getNamespaceName()) {
+            $mock = new \PHPParser_Node_Stmt_Namespace(new \PHPParser_Node_Name($config->getNamespaceName()), array($mock));
         }
 
         /* echo "\n============================================================\n"; */

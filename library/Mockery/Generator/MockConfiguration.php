@@ -224,6 +224,24 @@ class MockConfiguration
         return $this->name = uniqid('Mockery_');
     }
 
+    public function getShortName()
+    {
+        $parts = explode("\\", $this->getName());
+        return array_pop($parts);
+    }
+
+    public function getNamespaceName()
+    {
+        $parts = explode("\\", $this->getName());
+        $shortName = array_pop($parts);
+
+        if (count($parts)) {
+            return implode("\\", $parts);
+        }
+
+        return "";
+    }
+
     public function setName($name)
     {
         $this->name = $name;
