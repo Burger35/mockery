@@ -191,6 +191,7 @@ class MockConfiguration
 
     public function getTargetInterfaces()
     {
+        $this->targetInterfaces = array_unique($this->targetInterfaces); // just in case
         return $this->targetInterfaces;
     }
 
@@ -312,9 +313,47 @@ class MockConfiguration
         return $methods;
     }
 
+    /**
+     * If we attempt to implement Traversable, we must ensure we are also 
+     * implementing either Iterator or IteratorAggregate, and that whichever one 
+     * it is comes before Traversable in the list of implements.
+     */
     protected function addTargetInterface($targetInterface)
     {
-        $this->targetInterfaces[] = $targetInterface;
+        $rfc = new \ReflectionClass($targetInterface);
+        $extendedInterfaces = array_keys($rfc->getInterfaces());
+        $extendedInterfaces[] = $targetInterface;
+
+        $traversableFound = false;
+        $iteratorShiftedToFront = false;
+        foreach ($extendedInterfaces as $interface) {
+
+            if (!$traversableFound && preg_match("/^\\?Iterator(|Aggregate)$/i", $interface)) {
+                break;
+            }
+
+            if (preg_match("/^\\\\?IteratorAggregate$/i", $interface)) {
+                $this->targetInterfaces[] = "\\IteratorAggregate";
+                $iteratorShiftedToFront = true;
+            } else if (preg_match("/^\\\\?Iterator$/i", $interface)) {
+                $this->targetInterfaces[] = "\\Iterator";
+                $iteratorShiftedToFront = true;
+            } else if (preg_match("/^\\\\?Traversable$/i", $interface)) {
+                $traversableFound = true;
+            }
+        }
+
+        if ($traversableFound && !$iteratorShiftedToFront) {
+            $this->targetInterfaces[] = "\\IteratorAggregate";
+        }
+
+        /**
+         * We never straight up implement Traversable
+         */
+        if (!preg_match("/^\\\\?Traversable$/i", $targetInterface)) {
+            $this->targetInterfaces[] = $targetInterface;
+        }
+
         return $this;
     }
 
