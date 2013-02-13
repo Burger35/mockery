@@ -452,4 +452,33 @@ class Mock implements MockInterface
         return $this->_mockery_mockableProperties;
     }
 
+
+    public function __wakeup()
+    {
+        /**
+         * This does not add __wakeup method support. It's a blind method and any
+         * expected __wakeup work will NOT be performed. It merely cuts off
+         * annoying errors where a __wakeup exists but is not essential when
+         * mocking
+         */
+    }
+
+    public static function __callStatic($method, array $args)
+    {
+        try {
+            $associatedRealObject = \Mockery::fetchMock(__CLASS__);
+            return $associatedRealObject->__call($method, $args);
+        } catch (BadMethodCallException $e) {
+            throw new BadMethodCallException(
+                'Static method ' . $associatedRealObject->mockery_getName() . '::' . $method
+                . '() does not exist on this mock object'
+            );
+        }
+    }
+
+    public function mockery_getExpectations()
+    {
+        return $this->_mockery_expectations;
+    }
+
 }
